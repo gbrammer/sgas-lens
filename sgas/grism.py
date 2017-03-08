@@ -46,25 +46,29 @@ def preprocess():
     # 22 sdssj0851+3331-sgas-d66-2e-351.0-g141
     # 23 sdssj0851+3331-sgas-d66-2f-351.0-g141
     
-    group_idx = [[0,1], [2,3,4,5], [6,7,8,9], [10,11]]
+    d_idx = [[0,1], [2,3,4,5], [6,7,8,9], [10,11]]
+    g_idx = [[16,17], [18,19,20,21], [12,13,14,15], [22,23]]
+    
+    label =  ['y','y','h','h']
+    
     groups = []
-    for idx, label in zip(group_idx, ['y','y','h','h']):        
-        i = idx[0]
-        filter = visits[i]['product'].split('-')[-1]
-        orient = visits[i]['product'].split('-')[-2]
+    for i in range(4):     
+
+        filter = visits[d_idx[i][0]]['product'].split('-')[-1]
+        orient = visits[d_idx[i][0]]['product'].split('-')[-2]
         
         direct_exposures = []
         grism_exposures = []
         
-        for i in idx:
-            direct_exposures.extend(visits[i]['files'])
-            grism_exposures.extend(visits[i+12]['files'])
+        for j in range(len(d_idx[i])):
+            direct_exposures.extend(visits[d_idx[i][j]]['files'])
+            grism_exposures.extend(visits[g_idx[i][j]]['files'])
         
         group = {'grism':
-        {'product':'sdssj0851+3331-sgas-{0}-{1}-g141'.format(label, orient),
+        {'product':'sdssj0851+3331-sgas-{0}-{1}-g141'.format(label[i], orient),
          'files':grism_exposures},
                   'direct':
-        {'product':'sdssj0851+3331-sgas-{0}-{1}-{2}'.format(label, orient, filter),
+        {'product':'sdssj0851+3331-sgas-{0}-{1}-{2}'.format(label[i], orient, filter),
          'files':direct_exposures}}
         
         groups.append(group)
