@@ -116,4 +116,9 @@ def make_filter_mosaics():
             
     # Drizzle them, North-up and with 0.06" pixels
     grizli.prep.drizzle_overlaps(imaging_visits, parse_visits=False, pixfrac=0.8, scale=0.06, skysub=False, final_wht_type='IVM', check_overlaps=False)
-
+    
+    # Make SExtractor catalog
+    extra = {'BACK_TYPE':'MANUAL', 'BACK_VALUE':0.0, 'FILTER_NAME': os.path.join(sgas.get_data_path(), 'gauss_4.0_7x7.conv')}
+    
+    cat = grizli.prep.make_drz_catalog('sdssj0851+3331-f160w', threshold=1.8, get_background=False, extra_config=extra)
+    
