@@ -94,7 +94,23 @@ def preprocess():
                                         grism=grism, radec=radec,
                                         skip_direct=False,
                                         align_mag_limits=[14,23])
-
+    
+    # Apply persistence masks: 
+    #   Download the products from 
+    #   https://archive.stsci.edu/prepds/persist/search.php, unpack them 
+    #   and put the *persist.fits files in ./Prep/../Persistence/
+    for i in range(len(groups)):
+        direct = groups[i]['direct']
+        grism = groups[i]['grism']
+    
+        for sub in [grism, direct]:
+            for file in sub['files']:
+                print(file)
+                if os.path.exists('../Persistence/'+file.replace('_flt', '_persist')):
+                    grizli.prep.apply_persistence_mask(file,
+                            path='../Persistence', dq_value=1024,
+                            err_threshold=0.6, grow_mask=3, verbose=True)
+        
 def make_filter_mosaics():
     """
     Make combined mosaics in each filter, aligned to a common pixel grid
@@ -121,4 +137,36 @@ def make_filter_mosaics():
     extra = {'BACK_TYPE':'MANUAL', 'BACK_VALUE':0.0, 'FILTER_NAME': os.path.join(sgas.get_data_path(), 'gauss_4.0_7x7.conv')}
     
     cat = grizli.prep.make_drz_catalog('sdssj0851+3331-f160w', threshold=1.8, get_background=False, extra_config=extra)
+    
+def static_grism_model():
+    
+    import glob
+    import drizzlepac # to avoid memory issues with GroupFLT...
+    
+    import grizli
+    import grizli.prep
+    
+    # Find the grism exposures
+    files=glob.glob('*_flt.fits')
+    info = grizli.utils.get_flt_info(files)
+    grism_files = list(info['FILE'][info['FILTER'] == 'G141'])
+    
+    # Initialize GroupFLT object
+    grp = grizli.multifit.GroupFLT(grism_files=grism_files,
+                                   direct_files=[], 
+                                 ref_file='sdssj0851+3331-f160w_drz_sci.fits',
+                                   seg_file='sdssj0851+3331-f160w_seg.fits',
+                                   catalog='sdssj0851+3331-f160w.cat',
+                                   cpu_count=4)
+    
+    # First-pass flat spectrum model
+    grp.compute_full_model(fit_info=None, verbose=True, store=False, mag_limit=25, coeffs=[1.1, -0.5], cpu_count=4)
+    
+    # Refine model of bright galaxies
+    ds9 = None
+    for iter in range(2):
+        grp.refine_list(poly_order=2, mag_limits=[16, 24], max_coeff=5, ds9=ds9, verbose=True)
+        
+                               
+    
     
