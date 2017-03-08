@@ -94,10 +94,26 @@ def preprocess():
                                         grism=grism, radec=radec,
                                         skip_direct=False,
                                         align_mag_limits=[14,23])
-        
-    # Make both images have the same pixel grid
-    visits[1]['reference'] = 'sdssj0851+3331-c2i-06-293.0-f125w_drz_sci.fits'
+
+def make_filter_mosaics():
+    """
+    Make combined mosaics in each filter, aligned to a common pixel grid
+    """
+    import glob
+    import grizli
+    import grizli.prep
     
+    ### Make mosaics
+    files=glob.glob('*_flt.fits')
+    info = grizli.utils.get_flt_info(files)
+    imaging_visits = []
+    for i, filter in enumerate(['f160w', 'f125w', 'f105w']):
+        product = 'sdssj0851+3331-{0}'.format(filter)
+        visit_files = list(info['FILE'][info['FILTER'] == filter.upper()])
+        imaging_visits.append({'product':product, 'files':visit_files})
+        if i > 0:
+            imaging_visits[-1]['reference'] = 'sdssj0851+3331-f160w_drz_sci.fits'
+            
     # Drizzle them, North-up and with 0.06" pixels
-    grizli.prep.drizzle_overlaps(visits, parse_visits=False, pixfrac=0.8, scale=0.06, skysub=False, final_wht_type='IVM', check_overlaps=False)
+    grizli.prep.drizzle_overlaps(imaging_visits, parse_visits=False, pixfrac=0.8, scale=0.06, skysub=False, final_wht_type='IVM', check_overlaps=False)
 
